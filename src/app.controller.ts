@@ -10,24 +10,10 @@ import { Public } from './decorator/customize';
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private comfigService : ConfigService,
-    private authService : AuthService
-
-  
-  ) {}
-  @Public()
-  @UseGuards(LocalAuthGuard)
-  @Post('/login')
-  handleLogin(@Request() req) {
-    return this.authService.login(req.user);
-  }
+    private comfigService: ConfigService,
+    private authService: AuthService
 
 
-  // @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  getProfile(@Request() req) {
-    return req.user;
-  }
-
+  ) { }
 
 }
