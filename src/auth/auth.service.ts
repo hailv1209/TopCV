@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { IUser } from 'src/users/user.interface';
@@ -63,6 +63,59 @@ export class AuthService {
       expiresIn: ms(this.configService.get<string>("JWT_REFRESH_EXPIRE")) / 1000
     })
     return refresh_token
+  }
+
+  processNewToken = async (refeshToken: string, response: Response) => {
+    try {
+      this.jwtService.verify(refeshToken, {
+        secret: this.configService.get<string>("JWT_REFRESH_TOKEN_SECRET")
+      })
+
+      let user = await this.usersService.findUserByToken(refeshToken)
+      if (user) {
+        const { _id, name, email, role } = user;
+        const payload = {
+          sub: "refresh access token login",
+          iss: "from server",
+          _id,
+          name,
+          email,
+          role
+        };
+        const refesh_token = this.createRefreshToken(payload);
+
+        //update user with refresh token
+        await this.usersService.updateUserToken(refesh_token, _id.toString());
+
+        //set refresh_token as cookies
+        response.clearCookie("refesh_token");
+        response.cookie('refesh_token', refesh_token, {
+          httpOnly: true,
+          maxAge: ms(this.configService.get<string>("JWT_REFRESH_EXPIRE"))
+        })
+
+        return {
+          access_token: this.jwtService.sign(payload),
+          user: {
+            _id,
+            name,
+            email,
+            role
+          }
+        };
+
+      } else {
+        throw new BadRequestException('Refresh token is not valid. Please login again !')
+      }
+    } catch (error) {
+      throw new BadRequestException('Refresh token is not valid. Please login again !')
+    }
+  }
+
+  procesLogout = (response: Response, user: IUser) => {
+    this.usersService.updateUserToken("", user._id)
+    response.clearCookie('refesh_token')
+    return 'ok'
   }
 
 }
