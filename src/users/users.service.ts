@@ -106,14 +106,16 @@ export class UsersService {
       return 'Not found user'
     let user = await this.userModel.findOne({
       _id: id
-    }).select("-password");
+    })
+      .select("-password")
+      .populate({ path: 'role', select: { name: 1, _id: 1 } });
     return user;
   }
 
   async findOneByUsername(username: string) {
     return await this.userModel.findOne({
       email: username
-    });
+    }).populate({ path: 'role', select: { name: 1, permissions: 1 } });
   }
 
 
@@ -134,6 +136,10 @@ export class UsersService {
   async remove(id: string, user: IUser) {
     if (!mongoose.Types.ObjectId.isValid((id)))
       return 'Unavaible Id user'
+    const foundUser = await this.userModel.findById(id);
+    if (foundUser.email === "abcdef@gmail.com") {
+      throw new BadRequestException("Can not remove admin account")
+    }
     await this.userModel.updateOne({ _id: id }, {
       deletedBy: {
         _id: user._id,

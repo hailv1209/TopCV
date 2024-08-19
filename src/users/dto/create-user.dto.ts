@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsEmail, IsNotEmpty, IsNotEmptyObject, IsObject, Length, ValidateNested } from "class-validator";
+import { IsEmail, IsMongoId, IsNotEmpty, IsNotEmptyObject, IsObject, Length, ValidateNested } from "class-validator";
 import mongoose from "mongoose";
 
 
@@ -38,7 +38,8 @@ export class CreateUserDto {
     address: string;
 
     @IsNotEmpty({ message: "Role is not allow null" })
-    role: string;
+    @IsMongoId({ message: "Role must be a mongo ID" })
+    role: mongoose.Schema.Types.ObjectId;
 
     @IsNotEmptyObject()
     @IsObject()
