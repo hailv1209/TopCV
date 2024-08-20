@@ -8,13 +8,15 @@ import { Request, Response } from 'express';
 import { JwtStrategy } from './passport/jwt.strategy';
 import { IUser } from 'src/users/user.interface';
 import { use } from 'passport';
+import { RolesService } from 'src/roles/roles.service';
 
 
 @Controller("auth")
 export class AuthController {
     constructor(
         private authService: AuthService,
-        private usersService: UsersService
+        private usersService: UsersService,
+        private rolesService: RolesService
     ) { }
     @Public()
     @UseGuards(LocalAuthGuard)
@@ -40,7 +42,9 @@ export class AuthController {
 
     @ResponseMessage("Get user information")
     @Get("account")
-    getAccount(@User() user: IUser) {
+    async getAccount(@User() user: IUser) {
+        const temp = await this.rolesService.findOne(user.role._id) as any;
+        user.permissions = temp.permissions
         return { user }
     }
 

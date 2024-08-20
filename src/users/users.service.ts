@@ -8,11 +8,20 @@ import { compareSync, genSaltSync, hashSync } from 'bcryptjs'
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { IUser } from './user.interface';
 import aqp from 'api-query-params';
+import { Role, RoleDocument } from 'src/roles/schemas/role.schema';
+import { USER_ROLE } from 'src/databases/sample';
+import path from 'path';
 @Injectable()
 export class UsersService {
 
 
-  constructor(@InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>) { }
+  constructor(
+    @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>,
+
+    @InjectModel(Role.name) private roleModel: SoftDeleteModel<RoleDocument>
+
+
+  ) { }
 
   getHashPassword = (password: string) => {
     const salt = genSaltSync(10);
@@ -53,6 +62,10 @@ export class UsersService {
     if (this.isExit(email)) {
       throw new BadRequestException(`The ${email} has exited, please use another email`)
     }
+
+    //fetch user role 
+    const userRole = await this.roleModel.findOne({ name: USER_ROLE });
+
     const hashPassword = this.getHashPassword(password)
     let user = await this.userModel.create({
       name,
@@ -61,7 +74,7 @@ export class UsersService {
       age,
       gender,
       address,
-      role: "USER"
+      role: userRole?._id
     })
     return {
       _id: user?._id,
@@ -115,7 +128,7 @@ export class UsersService {
   async findOneByUsername(username: string) {
     return await this.userModel.findOne({
       email: username
-    }).populate({ path: 'role', select: { name: 1, permissions: 1 } });
+    }).populate({ path: 'role', select: { name: 1 } });
   }
 
 
@@ -155,7 +168,7 @@ export class UsersService {
   }
 
   findUserByToken = async (refreshToken: string) => {
-    return await this.userModel.findOne({ refreshToken }
-    );
+    return await this.userModel.findOne({ refreshToken })
+      .populate({ path: 'role', select: { name: 1 } });
   }
 }
