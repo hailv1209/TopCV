@@ -29,12 +29,13 @@ export class UsersService {
     return hash;
   }
   isExit = async (email: string) => {
-    return await this.userModel.findOne({ email })
+    const user = await this.userModel.findOne({ email })
+    return !!user;
   }
 
   async create(createUserDto: CreateUserDto, user: IUser) {
     const { name, email, password, age, gender, address, role, company } = createUserDto
-    if (this.isExit(email)) {
+    if (await this.isExit(email)) {
       throw new BadRequestException(`The ${email} has exited, please use another email`)
     }
     const hashPassword = this.getHashPassword(password)
@@ -150,7 +151,7 @@ export class UsersService {
     if (!mongoose.Types.ObjectId.isValid((id)))
       return 'Unavaible Id user'
     const foundUser = await this.userModel.findById(id);
-    if (foundUser.email === "abcdef@gmail.com") {
+    if (foundUser && foundUser.email === "abcdef@gmail.com") {
       throw new BadRequestException("Can not remove admin account")
     }
     await this.userModel.updateOne({ _id: id }, {
