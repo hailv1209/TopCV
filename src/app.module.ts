@@ -14,20 +14,23 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
 import { DatabasesModule } from './databases/databases.module';
 import { SubscribersModule } from './subscribers/subscribers.module';
+import { MailModule } from './mail/mail.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
-  imports: [ConfigModule],
-  useFactory: async (configService: ConfigService) => ({
-    uri: configService.get<string>('MONGO_URL'),
-    connectionFactory: (connection) => {
-connection.plugin(softDeletePlugin);
-return connection;
-}
-  }),
-  inject: [ConfigService],
-}),
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGO_URL'),
+        connectionFactory: (connection) => {
+          connection.plugin(softDeletePlugin);
+          return connection;
+        }
+      }),
+      inject: [ConfigService],
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -40,10 +43,11 @@ return connection;
     PermissionsModule,
     RolesModule,
     DatabasesModule,
-    SubscribersModule
+    SubscribersModule,
+    MailModule
   ],
   controllers: [AppController],
   providers: [AppService,
   ],
 })
-export class AppModule {}
+export class AppModule { }

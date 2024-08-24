@@ -41,7 +41,9 @@ async function bootstrap() {
     defaultVersion: ['1', '2']
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true
+  }));
   await app.listen(port);
 }
 bootstrap();
