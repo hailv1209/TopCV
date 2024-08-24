@@ -9,6 +9,7 @@ import { JwtStrategy } from './passport/jwt.strategy';
 import { IUser } from 'src/users/user.interface';
 import { use } from 'passport';
 import { RolesService } from 'src/roles/roles.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 
 @Controller("auth")
@@ -20,6 +21,7 @@ export class AuthController {
     ) { }
     @Public()
     @UseGuards(LocalAuthGuard)
+    @UseGuards(ThrottlerGuard)
     @ResponseMessage("User Login")
     @Post('/login')
     handleLogin(@Req() req, @Res({ passthrough: true }) response: Response) {
