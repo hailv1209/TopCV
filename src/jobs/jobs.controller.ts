@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Public, ResponseMessage, User } from 'src/decorator/customize';
 import { IUser } from 'src/users/user.interface';
+import { Request } from 'express';
 
 @Controller('jobs')
 export class JobsController {
@@ -21,9 +22,10 @@ export class JobsController {
   findAll(
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
-    @Query() qs: string
+    @Query() qs: string,
+    @Req() req: Request
   ) {
-    return this.jobsService.findAll(+current, +pageSize, qs);
+    return this.jobsService.findAll(+current, +pageSize, qs, req);
   }
 
   @ResponseMessage("Fetch a job by id")

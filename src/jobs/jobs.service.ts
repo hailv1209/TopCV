@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ExecutionContext, Injectable } from '@nestjs/common';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { IUser } from 'src/users/user.interface';
@@ -7,11 +7,16 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
 import dayjs from 'dayjs';
+import { User, UserDocument } from 'src/users/schemas/user.schema';
+import { Request } from 'express';
 
 @Injectable()
 export class JobsService {
 
-  constructor(@InjectModel(Job.name) private jobModel: SoftDeleteModel<JobDocument>) { }
+  constructor(
+    @InjectModel(Job.name) private jobModel: SoftDeleteModel<JobDocument>,
+    @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>
+  ) { }
 
   checkDays(startDate: Date, endDate: Date) {
     return dayjs(startDate).isBefore(endDate)
@@ -34,8 +39,8 @@ export class JobsService {
     }
   }
 
-  async findAll(current: number, pageSize: number, qs: string) {
-    const { filter, sort, population } = aqp(qs);
+  async findAll(current: number, pageSize: number, qs: string, req: Request) {
+    const { filter, sort, projection, population } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
 
@@ -44,6 +49,32 @@ export class JobsService {
 
     const totalItems = (await this.jobModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    // const user = req.user as IUser
+    // if (user.role.name === "HR") {
+    //   const companyInfo = (await this.userModel.findOne({ _id: user._id }).select({ "company": 1, "_id": 0 })).toObject();
+    //   filter["companyId"] = companyInfo.company._id;
+    //   let result = await this.jobModel.find(filter)
+    //     .skip(offset)
+    //     .limit(defaultLimit)
+    //     //@ts-ignore
+    //     .sort(sort)
+    //     .select(projection)
+    //     .populate(population)
+    //     .exec();
+
+    //   return {
+    //     'meta': {
+    //       'current': current,
+    //       'pageSize': pageSize,
+    //       'pages': totalPages,
+    //       'total': totalItems
+    //     },
+    //     result
+
+    //   };
+    // }
+
 
     const result = await this.jobModel.find(filter)
       .skip(offset)

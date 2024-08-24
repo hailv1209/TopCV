@@ -7,11 +7,15 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { IUser } from 'src/users/user.interface';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
+import { User, UserDocument } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class ResumesService {
 
-  constructor(@InjectModel(Resume.name) private resumeModel: SoftDeleteModel<ResumeDocument>) { }
+  constructor(
+    @InjectModel(Resume.name) private resumeModel: SoftDeleteModel<ResumeDocument>,
+    @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>
+  ) { }
 
 
   async create(createResumeDto: CreateResumeDto, user: IUser) {
@@ -44,7 +48,7 @@ export class ResumesService {
     }
   }
 
-  async findAll(current: number, pageSize: number, qs: string) {
+  async findAll(current: number, pageSize: number, qs: string, user: IUser) {
     const { filter, sort, projection, population } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
@@ -54,6 +58,30 @@ export class ResumesService {
 
     let total = (await this.resumeModel.find(filter)).length
     let pages = Math.ceil(total / defaultLimit)
+
+    if (user.role.name === "HR") {
+      const companyInfo = (await this.userModel.findOne({ _id: user._id }).select({ "company": 1, "_id": 0 })).toObject();
+      filter["companyId"] = companyInfo.company._id;
+      let result = await this.resumeModel.find(filter)
+        .skip(offset)
+        .limit(defaultLimit)
+        //@ts-ignore
+        .sort(sort)
+        .select(projection)
+        .populate(population)
+        .exec();
+
+      return {
+        'meta': {
+          'current': current,
+          'pageSize': pageSize,
+          'pages': pages,
+          'total': total
+        },
+        result
+
+      };
+    }
 
     let result = await this.resumeModel.find(filter)
       .skip(offset)

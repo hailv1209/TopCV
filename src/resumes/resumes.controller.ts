@@ -20,9 +20,10 @@ export class ResumesController {
   findAll(
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
-    @Query() qs: string
+    @Query() qs: string,
+    @User() user: IUser
   ) {
-    return this.resumesService.findAll(+current, +pageSize, qs);
+    return this.resumesService.findAll(+current, +pageSize, qs, user);
   }
 
   @Get(':id')
